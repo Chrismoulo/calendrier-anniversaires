@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendrier des Anniversaires</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen p-4">
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl">🎁</span>
+                    <h1 class="text-3xl font-bold text-gray-800">Calendrier des Anniversaires</h1>
+                </div>
+                <button id="adminBtn" class="text-gray-500 hover:text-purple-600 transition">
+                    🔒
+                </button>
+            </div>
+
+            <!-- Panneau Admin -->
+            <div id="adminPanel" class="bg-gray-100 rounded-xl p-4 mb-6 hidden">
+                <h3 class="font-semibold text-gray-800 mb-3">Connexion Administrateur</h3>
+                <div class="flex gap-2">
+                    <input type="password" id="adminPassword" placeholder="Mot de passe"
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <button id="loginBtn" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                        Connexion
+                    </button>
+                </div>
+            </div>
+
+            <div id="adminStatus" class="bg-green-100 rounded-xl p-3 mb-6 hidden">
+                <div class="flex justify-between items-center">
+                    <span class="text-green-800 font-semibold">✓ Mode Administrateur activé</span>
+                    <button id="logoutBtn" class="text-green-700 hover:text-green-900 text-sm underline">
+                        Déconnexion
+                    </button>
+                </div>
+            </div>
+
+            <!-- Prochains anniversaires -->
+            <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 mb-6">
+                <h2 class="text-lg font-semibold text-purple-800 mb-3">🎉 Prochains anniversaires</h2>
+                <div id="upcomingList" class="space-y-2"></div>
+            </div>
+
+            <!-- Ajouter un anniversaire -->
+            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    ➕ Ajouter un anniversaire
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input type="text" id="newName" placeholder="Nom complet"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <input type="number" id="newDay" placeholder="Jour (1-31)" min="1" max="31"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <select id="newMonth"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="">Sélectionner le mois</option>
+                        <option value="1">Janvier</option>
+                        <option value="2">Février</option>
+                        <option value="3">Mars</option>
+                        <option value="4">Avril</option>
+                        <option value="5">Mai</option>
+                        <option value="6">Juin</option>
+                        <option value="7">Juillet</option>
+                        <option value="8">Août</option>
+                        <option value="9">Septembre</option>
+                        <option value="10">Octobre</option>
+                        <option value="11">Novembre</option>
+                        <option value="12">Décembre</option>
+                    </select>
+                    <button id="addBtn" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                        ➕ Ajouter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="🔍 Rechercher un nom..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                </div>
+                <select id="monthFilter"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <option value="all">Tous les mois</option>
+                    <option value="1">Janvier</option>
+                    <option value="2">Février</option>
+                    <option value="3">Mars</option>
+                    <option value="4">Avril</option>
+                    <option value="5">Mai</option>
+                    <option value="6">Juin</option>
+                    <option value="7">Juillet</option>
+                    <option value="8">Août</option>
+                    <option value="9">Septembre</option>
+                    <option value="10">Octobre</option>
+                    <option value="11">Novembre</option>
+                    <option value="12">Décembre</option>
+                </select>
+            </div>
+
+            <!-- Liste des anniversaires -->
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">
+                    📅 Liste complète (<span id="totalCount">0</span> anniversaire(s))
+                </h2>
+                <div id="birthdayList" class="space-y-2"></div>
+            </div>
+
+            <div class="mt-6 text-center text-sm text-gray-500">
+                Total: <span id="totalCount2">0</span> anniversaire(s) enregistré(s)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "anniversaire2026"; // CHANGEZ CE MOT DE PASSE !
+        const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        
+        const initialBirthdays = [
+            { name: "Mireille Assey", day: 13, month: 7 },
+            { name: "Mme Kouassi Isabelle", day: 9, month: 6 },
+            { name: "Anoma Simone", day: 17, month: 2 },
+            { name: "Abraham Kablan", day: 12, month: 4 },
+            { name: "Marie Marcelle Atchouwa", day: 2, month: 6 },
+            { name: "Eric kouadio", day: 31, month: 1 },
+            { name: "WATTA Hilarys", day: 20, month: 3 },
+            { name: "Mme Kanga Thérèse", day: 22, month: 11 },
+            { name: "Eliora Kouakou", day: 12, month: 9 },
+            { name: "Yannick Agoussi", day: 18, month: 4 },
+            { name: "Barga Aurelie", day: 3, month: 1 },
+            { name: "NEBOUT Marie Grâce", day: 26, month: 7 },
+            { name: "Meliane Wognin", day: 7, month: 7 },
+            { name: "Abakon loïc", day: 8, month: 12 },
+            { name: "NIANGORAN KOFFI Léopold", day: 16, month: 10 },
+            { name: "Audrey LIA", day: 26, month: 12 },
+            { name: "Gbana Divine", day: 22, month: 5 },
+            { name: "Mme Batoua Christiane", day: 4, month: 3 },
+            { name: "Mme Edi Konan Niamien Sathurine", day: 12, month: 12 },
+            { name: "SÉKA Oscar", day: 12, month: 3 },
+            { name: "Amelin grâce benie", day: 2, month: 5 },
+            { name: "NOGBOU Épiphanie", day: 6, month: 2 },
+            { name: "EHUI Kouassi Moayé Leslie", day: 10, month: 4 },
+            { name: "houin Blandine", day: 7, month: 7 },
+            { name: "Ametchi Isabelle", day: 7, month: 3 },
+            { name: "Comoé Laurania", day: 2, month: 6 },
+            { name: "Mme koffi Sanata", day: 20, month: 5 }
+        ];
+
+        let birthdays = [];
+        let isAdmin = false;
+
+        function loadBirthdays() {
+            const saved = localStorage.getItem('birthdays');
+            birthdays = saved ? JSON.parse(saved) : initialBirthdays;
+            if (!saved) saveBirthdays();
+        }
+
+        function saveBirthdays() {
+            localStorage.setItem('birthdays', JSON.stringify(birthdays));
+        }
+
+        function addBirthday() {
+            const name = document.getElementById('newName').value.trim();
+            const day = parseInt(document.getElementById('newDay').value);
+            const month = parseInt(document.getElementById('newMonth').value);
+
+            if (name && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                birthdays.push({ name, day, month });
+                saveBirthdays();
+                document.getElementById('newName').value = '';
+                document.getElementById('newDay').value = '';
+                document.getElementById('newMonth').value = '';
+                render();
+            }
+        }
+
+        function deleteBirthday(index) {
+            if (isAdmin) {
+                birthdays.splice(index, 1);
+                saveBirthdays();
+                render();
+            }
+        }
+
+        function getUpcomingBirthdays() {
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1;
+            const currentDay = today.getDate();
+
+            return birthdays.map(b => {
+                let daysUntil;
+                if (b.month > currentMonth || (b.month === currentMonth && b.day >= currentDay)) {
+                    const thisYear = new Date(today.getFullYear(), b.month - 1, b.day);
+                    daysUntil = Math.ceil((thisYear - today) / (1000 * 60 * 60 * 24));
+                } else {
+                    const nextYear = new Date(today.getFullYear() + 1, b.month - 1, b.day);
+                    daysUntil = Math.ceil((nextYear - today) / (1000 * 60 * 60 * 24));
+                }
+                return { ...b, daysUntil };
+            }).sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 5);
+        }
+
+        function render() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedMonth = document.getElementById('monthFilter').value;
+
+            const filtered = birthdays
+                .filter(b => 
+                    (selectedMonth === 'all' || b.month === parseInt(selectedMonth)) &&
+                    b.name.toLowerCase().includes(searchTerm)
+                )
+                .sort((a, b) => a.day - b.day);
+
+            // Upcoming birthdays
+            const upcoming = getUpcomingBirthdays();
+            document.getElementById('upcomingList').innerHTML = upcoming.map(b => `
+                <div class="bg-white rounded-lg p-3 flex justify-between items-center">
+                    <span class="font-medium text-gray-700">${b.name}</span>
+                    <span class="text-sm text-purple-600">
+                        ${b.day} ${months[b.month - 1]} 
+                        (${b.daysUntil === 0 ? "Aujourd'hui!" : `dans ${b.daysUntil} jour${b.daysUntil > 1 ? 's' : ''}`})
+                    </span>
+                </div>
+            `).join('');
+
+            // Birthday list
+            document.getElementById('birthdayList').innerHTML = filtered.length === 0 
+                ? '<p class="text-gray-500 text-center py-8">Aucun anniversaire trouvé</p>'
+                : filtered.map((b, i) => {
+                    const originalIndex = birthdays.indexOf(b);
+                    return `
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 flex justify-between items-center hover:shadow-md transition">
+                            <div>
+                                <p class="font-semibold text-gray-800">${b.name}</p>
+                                <p class="text-sm text-gray-600">${b.day} ${months[b.month - 1]}</p>
+                            </div>
+                            ${isAdmin ? `
+                                <button onclick="deleteBirthday(${originalIndex})" class="text-red-500 hover:text-red-700 transition">
+                                    🗑️
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+            document.getElementById('totalCount').textContent = filtered.length;
+            document.getElementById('totalCount2').textContent = birthdays.length;
+        }
+
+        // Event listeners
+        document.getElementById('adminBtn').addEventListener('click', () => {
+            document.getElementById('adminPanel').classList.toggle('hidden');
+        });
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('adminStatus').classList.remove('hidden');
+                document.getElementById('adminPassword').value = '';
+                render();
+            } else {
+                alert('Mot de passe incorrect');
+                document.getElementById('adminPassword').value = '';
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            isAdmin = false;
+            document.getElementById('adminStatus').classList.add('hidden');
+            render();
+        });
+
+        document.getElementById('addBtn').addEventListener('click', addBirthday);
+        document.getElementById('searchInput').addEventListener('input', render);
+        document.getElementById('monthFilter').addEventListener('change', render);
+
+        document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+
+        // Initialize
+        loadBirthdays();
+        render();
+    </script>
+</body>
+</html>
